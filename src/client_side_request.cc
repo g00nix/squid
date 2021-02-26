@@ -636,17 +636,12 @@ ClientRequestContext::hostHeaderVerify()
 
     debugs(85, 3, "validate host=" << host << ", port=" << port << ", portStr=" << (portStr?portStr:"NULL"));
     if (http->request->flags.intercepted || http->request->flags.interceptTproxy) {
-        // verify the Host: port (if any) matches the apparent destination
-        if (portStr && port != http->getConn()->clientConnection->local.port()) {
-            debugs(85, 3, "FAIL on validate port " << http->getConn()->clientConnection->local.port() <<
-                   " matches Host: port " << port << " (" << portStr << ")");
-            hostHeaderVerifyFailed("intercepted port", portStr);
-        } else {
-            // XXX: match the scheme default port against the apparent destination
-
-            // verify the destination DNS is one of the Host: headers IPs
-            ipcache_nbgethostbyname(host, hostHeaderIpVerifyWrapper, this);
-        }
+        // The original squid code will never work with modern internet.
+        // This block of code just verifies that the destination of the user matches the IP returned by the DNS server.
+        // As with current cloud setups the IPs always change, this makes Squid not usable in 2021.
+        debugs(85, 3, "Skipping all validations since we just want to unblock.");
+        http->request->flags.hostVerified = true;
+        http->doCallouts();
     } else if (!Config.onoff.hostStrictVerify) {
         debugs(85, 3, "validate skipped.");
         http->doCallouts();
